@@ -45,6 +45,7 @@ pub(crate) static LINTS: &[&crate::LintInfo] = &[
     crate::assertions_on_result_states::ASSERTIONS_ON_RESULT_STATES_INFO,
     crate::async_yields_async::ASYNC_YIELDS_ASYNC_INFO,
     crate::attrs::ALLOW_ATTRIBUTES_WITHOUT_REASON_INFO,
+    crate::attrs::ATTR_BEFORE_DOC_INFO,
     crate::attrs::BLANKET_CLIPPY_RESTRICTION_LINTS_INFO,
     crate::attrs::DEPRECATED_CFG_ATTR_INFO,
     crate::attrs::DEPRECATED_SEMVER_INFO,

@@ -178,6 +178,32 @@ declare_clippy_lint! {
 
 declare_clippy_lint! {
     /// ### What it does
+    /// Checks for normal attributes before documentation.
+    ///
+    /// ### Why is this bad?
+    /// Writing attributes after documentation is more idiomatic.
+    ///
+    /// ### Example
+    /// ```rust
+    /// #[allow(dead_code)]
+    /// /// Documentation explaining a function after an attribute
+    /// fn not_quite_good_code() { }
+    /// ```
+    ///
+    /// Use instead:
+    /// ```rust
+    /// /// Documentation explaining a function before an attribute
+    /// #[allow(dead_code)]
+    /// fn not_quite_good_code() { }
+    /// ```
+    #[clippy::version = "1.70.0"]
+    pub ATTR_BEFORE_DOC,
+    nursery,
+    "normal attributes before documentation"
+}
+
+declare_clippy_lint! {
+    /// ### What it does
     /// Checks for `warn`/`deny`/`forbid` attributes targeting the whole clippy::restriction category.
     ///
     /// ### Why is this bad?
@@ -604,11 +630,13 @@ impl_lint_pass!(EarlyAttributes => [
     DEPRECATED_CFG_ATTR,
     MISMATCHED_TARGET_OS,
     EMPTY_LINE_AFTER_OUTER_ATTR,
+    ATTR_BEFORE_DOC,
 ]);
 
 impl EarlyLintPass for EarlyAttributes {
     fn check_item(&mut self, cx: &EarlyContext<'_>, item: &rustc_ast::Item) {
         check_empty_line_after_outer_attr(cx, item);
+        check_attr_before_doc(cx, item);
     }
 
     fn check_attribute(&mut self, cx: &EarlyContext<'_>, attr: &Attribute) {
@@ -647,6 +675,29 @@ fn check_empty_line_after_outer_attr(cx: &EarlyContext<'_>, item: &rustc_ast::It
                         Perhaps you forgot to add a `!` to make it an inner attribute?",
                     );
                 }
+            }
+        }
+    }
+}
+
+fn check_attr_before_doc(cx: &EarlyContext<'_>, item: &rustc_ast::Item) {
+    let mut iter = item.attrs.iter().peekable();
+    while let Some(attr) = iter.next() {
+        if matches!(attr.kind, AttrKind::Normal(..))
+            && attr.style == AttrStyle::Outer
+            && is_present_in_source(cx, attr.span)
+        {
+            if iter.peek().map_or(false, |next_attr| {
+                matches!(next_attr.kind, AttrKind::DocComment(..))
+                    && next_attr.style == AttrStyle::Outer
+                    && is_present_in_source(cx, next_attr.span)
+            }) {
+                span_lint(
+                    cx,
+                    ATTR_BEFORE_DOC,
+                    attr.span,
+                    "attributes should be placed after documentation comments",
+                );
             }
         }
     }
