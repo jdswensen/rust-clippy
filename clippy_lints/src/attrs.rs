@@ -183,6 +183,15 @@ declare_clippy_lint! {
     /// ### Why is this bad?
     /// Writing attributes after documentation is more idiomatic.
     ///
+    /// ### Known problems
+    /// Does not check for normal attributes that contain documentation.
+    /// For example:
+    /// ```rust
+    /// #[allow(dead_code)]
+    /// #[doc = "Documentation explaining a function after an attribute"]
+    /// fn will_not_be_detected() { }
+    /// ```
+    ///
     /// ### Example
     /// ```rust
     /// #[allow(dead_code)]
@@ -194,7 +203,7 @@ declare_clippy_lint! {
     /// ```rust
     /// /// Documentation explaining a function before an attribute
     /// #[allow(dead_code)]
-    /// fn not_quite_good_code() { }
+    /// fn this_is_fine() { }
     /// ```
     #[clippy::version = "1.70.0"]
     pub ATTR_BEFORE_DOC,
@@ -687,6 +696,7 @@ fn check_attr_before_doc(cx: &EarlyContext<'_>, item: &rustc_ast::Item) {
             && attr.style == AttrStyle::Outer
             && is_present_in_source(cx, attr.span)
         {
+            println!("attr: {:#?}, next_attr: {:#?}", attr, iter.peek());
             if iter.peek().map_or(false, |next_attr| {
                 matches!(next_attr.kind, AttrKind::DocComment(..))
                     && next_attr.style == AttrStyle::Outer
